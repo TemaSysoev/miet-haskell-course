@@ -48,6 +48,7 @@ tests:
     dependencies:
     - Lab3
     - hspec
+    - QuickCheck
     - hspec-hedgehog
     - quickcheck-classes
     - hedgehog-classes

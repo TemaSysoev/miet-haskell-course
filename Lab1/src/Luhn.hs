@@ -10,5 +10,22 @@ module Luhn where
 -- Не пытайтесь собрать всё в одну функцию, используйте вспомогательные.
 -- Например: разбить число на цифры (возможно, сразу в обратном порядке).
 -- Не забудьте добавить тесты, в том числе для вспомогательных функций!
+
 isLuhnValid :: Int -> Bool
-isLuhnValid = error "todo"
+
+digits :: Int -> [Int]
+digits n
+    | n < 0 = digits (abs n)
+    | n < 10 = [n]
+    | otherwise = digits (n `div` 10) ++ [n `mod` 10]
+
+processDigits :: [Int] -> [Int]
+processDigits = reverse . map processDigit . zip [0 :: Int ..] . reverse where
+    processDigit (i, d)
+        | odd i = doubleDigit d
+        | otherwise = d
+
+doubleDigit :: Int -> Int
+doubleDigit d = let doubled = 2 * d in if doubled > 9 then doubled - 9 else doubled
+
+isLuhnValid n = sum (processDigits (digits n)) `mod` 10 == 0
