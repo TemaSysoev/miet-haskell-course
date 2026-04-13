@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Streams where
 
+import Control.Applicative (liftA2)
 import Data.List(intercalate)
 
 -- Задание 1 -----------------------------------------
@@ -98,7 +99,6 @@ minMaxSlow xs = Just (minimum xs, maximum xs)
 
 {- -O0: Total time: ??? Total Memory in use: ??? -}
 {- -O2: Total time: ??? Total Memory in use: ??? -}
-minMax :: Ord a => [a] -> Maybe (a, a)
 minMax [] = Nothing
 minMax (x:xs) = Just $ foldl (\(mn,mx) y -> (min mn y, max mx y)) (x,x) xs
 -- Дополнительное задание: реализуйте ту же самую функцию (под названием minMaxBang) с
@@ -136,7 +136,7 @@ main = print $ minMaxSlow $ sTake 1000000 $ ruler
 -- http://hackage.haskell.org/package/quickcheck-classes
 -- или http://hackage.haskell.org/package/hedgehog-classes, если в предыдущем задании использовали Hedgehog.
 
- instance Functor Stream where
+instance Functor Stream where
     fmap f (x :> xs) = f x :> fmap f xs
 
 instance Applicative Stream where
@@ -149,10 +149,10 @@ instance Monad Stream where
     xs >>= f = joinStream (fmap f xs)
 
 joinStream :: Stream (Stream a) -> Stream a
-joinStream (x :> xs) = interleaveStreams x (joinStream xs)
+joinStream ((x :> _) :> xs) = x :> joinStream (fmap tailStream xs)
 
-interleaveStreams :: Stream a -> Stream a -> Stream a
-interleaveStreams (a :> as) bs = a :> interleaveStreams bs as
+tailStream :: Stream a -> Stream a
+tailStream (_ :> xs) = xs
 
 
 instance Foldable Stream where

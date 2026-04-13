@@ -10,10 +10,11 @@ newtype Point = Point [Double] deriving (Eq, Show, Read)
 
 -- используйте рекурсию и сопоставление с образцом
 distance :: Point -> Point -> Double
-distance x y
-where
-sumSq [] [] = 0
-sumSq (a:as) (b:bs) = (a - b) ^ 2 + sumSq as bs
+distance (Point xs) (Point ys) = sqrt (sumSq xs ys)
+    where
+        sumSq [] [] = 0
+        sumSq (a:as) (b:bs) = (a - b) * (a - b) + sumSq as bs
+        sumSq _ _ = error "Points must have the same dimension"
 
 -- intersect xs ys возвращает список, содержащий общие элементы двух списков.
 -- intersect [1, 2, 4, 6] [5, 4, 2, 5, 7] == [2, 4] (или [4, 2]!)
@@ -23,8 +24,8 @@ sumSq (a:as) (b:bs) = (a - b) ^ 2 + sumSq as bs
 intersect :: [Integer] -> [Integer] -> [Integer]
 intersect [] _ = []
 intersect (x:xs) ys
-| x `elem` ys = x : intersect xs ys
-| otherwise = intersect xs ys
+    | x `elem` ys = x : intersect xs ys
+    | otherwise = intersect xs ys
 
 -- zipN принимает список списков и возвращает список, который состоит из
 -- списка их первых элементов, списка их вторых элементов, и так далее.
@@ -33,8 +34,9 @@ intersect (x:xs) ys
 zipN :: [[a]] -> [[a]]
 zipN [] = []
 zipN xss
-| any null xss = []
-| otherwise = map head xss : zipN (map tail xss)
+    | all null xss = []
+    | otherwise = map head nonEmpty : zipN (map tail nonEmpty)
+    where nonEmpty = filter (not . null) xss
 
 -- Нижеперечисленные функции можно реализовать или рекурсивно, или с помощью
 -- стандартных функций для работы со списками (map, filter и т.д.)
@@ -47,13 +49,11 @@ zipN xss
 -- findLast (> 0) [-1, 2, -3, 4] == Just 4
 -- find (> 0) [-1, -2, -3] == Nothing
 find, findLast :: (a -> Bool) -> [a] -> Maybe a
-find :: (a -> Bool) -> [a] -> Maybe a
 find _ [] = Nothing
 find f (x:xs)
-| f x = Just x
-| otherwise = find f xs
+    | f x = Just x
+    | otherwise = find f xs
 
-findLast :: (a -> Bool) -> [a] -> Maybe a
 findLast f xs = case filter f xs of
   [] -> Nothing
   ys -> Just (last ys)
@@ -79,9 +79,6 @@ data NEL a = NEL a [a] deriving (Eq, Show, Read)
 
 -- Запишите правильный тип (т.е. такой, чтобы функция имела результат для любых аргументов
 -- без вызовов error) и реализуйте функции на NEL, аналогичные tail, last и zip
-
---
-data NEL a = NEL a [a] deriving (Eq, Show, Read)
 
 tailNel:: NEL a -> [a]
 tailNel (NEL _ xs) = xs

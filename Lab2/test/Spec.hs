@@ -32,43 +32,43 @@ main = hspec $ do
             nderiv 0 (P [1, 2, 3]) `shouldBe` P [1, 2, 3]
     describe "simpleLang" $ do
         it "desugar converts Incr, For, Block to DietStatement" $ do
-        let stmt = Block [Assign "X" (Val 1), Incr "X"]
-            desugared = desugar stmt
-            expected = DSequence (DAssign "X" (Val 1)) (DAssign "X" (Op (Var "X") Plus (Val 1)))
-        desugared `shouldBe` expected
+            let stmt = Block [Assign "X" (Val 1), Incr "X"]
+                desugared = desugar stmt
+                expected = DSequence (DAssign "X" (Val 1)) (DAssign "X" (Op (Var "X") Plus (Val 1)))
+            desugared `shouldBe` expected
 
         it "eval computes arithmetic and comparisons correctly" $ do
-        let st = extend empty "X" 3
-        eval st (Op (Var "X") Plus (Val 2)) `shouldBe` 5
-        eval st (Op (Var "X") Times (Val 4)) `shouldBe` 12
-        eval st (Op (Var "X") Gt (Val 2)) `shouldBe` 1
-        eval st (Op (Var "X") Eql (Val 3)) `shouldBe` 1
-        eval st (Op (Var "X") Lt (Val 0)) `shouldBe` 0
+            let st = extend empty "X" 3
+            eval st (Op (Var "X") Plus (Val 2)) `shouldBe` 5
+            eval st (Op (Var "X") Times (Val 4)) `shouldBe` 12
+            eval st (Op (Var "X") Gt (Val 2)) `shouldBe` 1
+            eval st (Op (Var "X") Eql (Val 3)) `shouldBe` 1
+            eval st (Op (Var "X") Lt (Val 0)) `shouldBe` 0
 
         it "runSimpler executes DietStatement correctly" $ do
-        let stmt = DSequence (DAssign "X" (Val 1)) (DAssign "Y" (Op (Var "X") Plus (Val 2)))
-            st' = runSimpler empty stmt
-        st' "X" `shouldBe` 1
-        st' "Y" `shouldBe` 3
+            let stmt = DSequence (DAssign "X" (Val 1)) (DAssign "Y" (Op (Var "X") Plus (Val 2)))
+                st' = runSimpler empty stmt
+            st' "X" `shouldBe` 1
+            st' "Y" `shouldBe` 3
 
         it "run executes Simple program correctly" $ do
-        let stmt = Block [Assign "X" (Val 1), Incr "X"]
-            st' = run empty stmt
-        st' "X" `shouldBe` 2
+            let stmt = Block [Assign "X" (Val 1), Incr "X"]
+                st' = run empty stmt
+            st' "X" `shouldBe` 2
 
         it "factorial of 5" $ do
-        let st0 = extend empty "In" 5
-            stF = run st0 factorial
-        stF "Out" `shouldBe` 120
+            let st0 = extend empty "In" 5
+                stF = run st0 factorial
+            stF "Out" `shouldBe` 120
 
         it "square root of 10" $ do
-        let st0 = extend empty "A" 10
-            stS = run st0 squareRoot
-        stS "B" `shouldBe` 3
+            let st0 = extend empty "A" 10
+                stS = run st0 squareRoot
+            stS "B" `shouldBe` 3
 
         it "fibonacci numbers" $ do
-        let fib n = run (extend empty "In" n) fibonacci
-        fib 0 "Out" `shouldBe` 1
-        fib 1 "Out" `shouldBe` 1
-        fib 5 "Out" `shouldBe` 8
-        fib 10 "Out" `shouldBe` 89
+            let fib n = run (extend empty "In" n) fibonacci
+            fib 0 "Out" `shouldBe` 1
+            fib 1 "Out" `shouldBe` 1
+            fib 5 "Out" `shouldBe` 8
+            fib 10 "Out" `shouldBe` 89

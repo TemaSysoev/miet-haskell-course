@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 import FunctorsMonads
 import Streams hiding (main)
 import Test.Hspec
@@ -6,6 +8,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 -- Документация в https://github.com/parsonsmatt/hspec-hedgehog#readme
 -- import Test.Hspec.Hedgehog
+import Test.QuickCheck
 
 -- Добавьте минимум 5 тестов свойств для функций из первых 2 лабораторных (скопируйте определения тестируемых функций сюда).
 
@@ -18,10 +21,9 @@ genStream = do
 instance Arbitrary a => Arbitrary (Stream a) where
   arbitrary = genStream
 
-
 main :: IO ()
 main = hspec $ do
-    describe "Functor laws for Stream" $ do
+  describe "Functor laws for Stream" $ do
     it "fmap id = id" $
       property $ \(xs :: Stream Int) ->
         sTake 100 (fmap id xs) == sTake 100 xs
@@ -39,28 +41,29 @@ main = hspec $ do
 
     it "pure f <*> pure x = pure (f x)" $
       property $ \(x :: Int) ->
-        sTake 10 (pure (+1) <*> pure x) == sTake 10 (pure ((+1) x))
+        sTake 10 (pure (+1) <*> pure x) == sTake 10 (pure ((+1) x) :: Stream Int)
 
     it "u <*> pure y = pure ($ y) <*> u" $
-      property $ \(u :: Stream (Int -> Int)) (y :: Int) ->
+      property $ \(y :: Int) ->
+        let u = sCycle [(+1), (*2), subtract 3]
+        in
         sTake 10 (u <*> pure y) == sTake 10 (pure ($ y) <*> u)
 
   describe "Monad laws for Stream" $ do
     it "return a >>= k = k a" $
-      property $ \(a :: Int) (k :: Int -> Stream Int) ->
-        sTake 50 ((return a) >>= k) == sTake 50 (k a)
+      property $ \(a :: Int) (Fun _ k :: Fun Int (Stream Int)) ->
+        sTake 50 (return a >>= k) == sTake 50 (k a)
 
     it "m >>= return = m" $
       property $ \(m :: Stream Int) ->
         sTake 50 (m >>= return) == sTake 50 m
 
-    it "m >>= (\x -> k x >>= h) = (m >>= k) >>= h" $
+    it "m >>= (\\x -> k x >>= h) = (m >>= k) >>= h" $
       property $ \(m :: Stream Int)
-                 (Fun _ k' :: Fun Int (Stream Int))
-                 (Fun _ h' :: Fun Int (Stream Int)) ->
-        let k = applyFun k'
-            h = applyFun h'
-        in sTake 50 (m >>= (\x -> k x >>= h)) == sTake 50 ((m >>= k) >>= h)
+                   (Fun _ k :: Fun Int (Stream Int))
+                   (Fun _ h :: Fun Int (Stream Int)) ->
+        sTake 50 (m >>= (\x -> k x >>= h))
+          == sTake 50 ((m >>= k) >>= h)
 
   describe "Stream functions" $ do
     it "sTake returns correct number of elements" $
@@ -68,6 +71,4 @@ main = hspec $ do
         length (sTake (getPositive n) (sRepeat x)) == getPositive n
 
     it "sInterleave alternates elements" $
-      let s1 = sTake 4 (sRepeat 1)
-          s2 = sTake 4 (sRepeat 2)
-      in take 8 (sInterleave (sCycle s1) (sCycle s2)) == [1,2,1,2,1,2,1,2]
+      sTake 8 (sInterleave (sRepeat (1 :: Int)) (sRepeat 2)) `shouldBe` [1, 2, 1, 2, 1, 2, 1, 2]

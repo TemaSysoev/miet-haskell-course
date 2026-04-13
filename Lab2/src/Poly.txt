@@ -18,10 +18,14 @@ x = P [0, 1]
 
 -- Функция, считающая значение многочлена в точке
 applyPoly :: Num a => Poly a -> a -> a
-applyPoly (P coeffs) x0 = go coeffs
-  where
-    go [] = 0
-    go (c:cs) = c + x0 * go cs
+-- не без помощи интрнета, но нашел достаточно простую 
+-- и красивую реализацию по схеме Горнера 
+-- P(x) = a0 + x * (a1 + x * (a2 + x * (a3 + ... + x * an)...))
+applyPoly (P coeffs) x = gorner coeffs x
+where 
+gorner [] _ = 0
+gorner (c:cs) x = c + x * gorner cs x 
+-- рекурсивно каждый раз забираем один коэффиуиент 
 
 -- Задание 3 ----------------------------------------
 
@@ -29,10 +33,12 @@ applyPoly (P coeffs) x0 = go coeffs
 -- Заметьте, что многочлены с разными списками коэффициентов
 -- могут быть равны! Подумайте, почему.
 instance (Num a, Eq a) => Eq (Poly a) where
-    P cs1 == P cs2 = normalize cs1 == normalize cs2
-      where
-        normalize = reverse . dropWhile (== 0) . reverse
-
+    (P1 cs1) (==) (P2 cs 2) = filter_coeffs cs1 == filter_coeffs cs2
+    where 
+    filter_coeffs cs = takeWhile (/= zero) (pad cs)
+    zero = 0 -- воркэраунд чтобы сравнивать с одним типом
+    pad cs = cs ++ repeat zero
+ 
 -- Задание 4 -----------------------------------------
 
 -- Определите перевод многочлена в строку. 
@@ -40,32 +46,19 @@ instance (Num a, Eq a) => Eq (Poly a) where
 -- например: show (3 * x * x + 1) == "3 * x^2 + 1").
 -- (* и + для многочленов можно будет использовать после задания 6.)
 instance (Num a, Eq a, Show a) => Show (Poly a) where
-    show (P coeffs) =
-        case reverse [showTerm c n | (c, n) <- zip coeffs [0 :: Int ..], c /= 0] of
-            [] -> "0"
-            ts -> joinWith " + " ts
-      where
-        showTerm c 0 = show c
-        showTerm c 1
-            | c == 1 = "x"
-            | otherwise = show c ++ " * x"
-        showTerm c n
-            | c == 1 = "x^" ++ show n
-            | otherwise = show c ++ " * x^" ++ show n
-
-        joinWith _ [] = ""
-        joinWith _ [t] = t
-        joinWith sep (t:ts) = t ++ sep ++ joinWith sep ts
+    show = undefined
 
 -- Задание 5 -----------------------------------------
 
 -- Определите сложение многочленов
 plus :: Num a => Poly a -> Poly a -> Poly a
+
 plus (P xs) (P ys) = P (add xs ys)
-  where
-    add [] bs = bs
-    add as [] = as
-    add (a:as) (b:bs) = (a + b) : add as bs
+where
+add [] bs = bs
+add as [] = as
+add (a:as) (b:bs) = (a + b) : add as bs
+
 
 -- Задание 6 -----------------------------------------
 
@@ -74,9 +67,10 @@ times :: Num a => Poly a -> Poly a -> Poly a
 times (P xs) (P ys) = foldr plus (P []) terms
   where
     terms =
-        [ P (replicate i 0 ++ map (a *) ys)
-        | (a, i) <- zip xs [0 :: Int ..]
-        ]
+      [ P (replicate i 0 ++ map (a *) ys)
+      | (a, i) <- zip xs [0..]
+      ]
+
 
 -- Задание 7 -----------------------------------------
 
@@ -85,8 +79,10 @@ instance Num a => Num (Poly a) where
     (+) = plus
     (*) = times
     negate (P xs) = P (map negate xs)
-    fromInteger n = P [fromInteger n]
-    abs = undefined
+    fromInteger n = P [fromInteger n]   
+    -- Эти функции оставить как undefined, поскольку для 
+    -- многочленов они не имеют математического смысла
+    abs    = undefined
     signum = undefined
 
 -- Задание 8 -----------------------------------------
@@ -94,16 +90,16 @@ instance Num a => Num (Poly a) where
 -- Реализуйте nderiv через deriv
 class Num a => Differentiable a where
     -- взятие производной
-    deriv :: a -> a
+    deriv  :: a -> a
     -- взятие n-ной производной
     nderiv :: Int -> a -> a
     nderiv n x
-        | n <= 0 = x
-        | otherwise = nderiv (n - 1) (deriv x)
-
+      | n <= 0    = x
+      | otherwise = nderiv (n - 1) (deriv x)
 -- Задание 9 -----------------------------------------
 
 -- Определите экземпляр класса типов
 instance Num a => Differentiable (Poly a) where
-    deriv (P (_:xs)) = P (zipWith (\c n -> c * fromIntegral n) xs [1 :: Integer ..])
-    deriv (P []) = P []
+    deriv (P (_:xs)) = P (zipWith (*) xs [1..])
+    deriv (P [])     = P []
+

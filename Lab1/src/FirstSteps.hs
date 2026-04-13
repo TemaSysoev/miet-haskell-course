@@ -23,7 +23,7 @@ max3, min3, median3 :: Integer -> Integer -> Integer -> Integer
 max3 x y z = max x (max y z)
 min3 x y z = min x (min y z)
 
-median3 x y z = x + y + z
+median3 x y z = x + y + z - max3 x y z - min3 x y z
 
 -- Типы данных, описывающие цвета в моделях 
 -- RGB (https://ru.wikipedia.org/wiki/RGB), компоненты от 0 до 255
@@ -43,16 +43,16 @@ data CMYK = CMYK { cyan :: Double, magenta :: Double, yellow :: Double, black ::
 rbgToCmyk :: RGB -> CMYK
 rbgToCmyk (RGB r g b) =
     let r_ = fromIntegral r / 255.0
-    let g_ = fromIntegral g / 255.0
-    let b_ = fromIntegral b / 255.0
-    let black = min (1 - r_) (min (1 - g_) (1 - b_))
-
-
-    let c = (1 - r_ - black) / (1 - black)
-    let m = (1 - g_ - black) / (1 - black)
-    let y = (1 - b_ - black) / (1 - black)
-
-    in CMYK c m y k
+        g_ = fromIntegral g / 255.0
+        b_ = fromIntegral b / 255.0
+        black = min (1 - r_) (min (1 - g_) (1 - b_))
+    in if black == 1
+            then CMYK 0 0 0 1
+            else
+                let c = (1 - r_ - black) / (1 - black)
+                    m = (1 - g_ - black) / (1 - black)
+                    y = (1 - b_ - black) / (1 - black)
+                in CMYK c m y black
 
 -- geomProgression b q n находит n-й (считая с 0) член 
 -- геометрической прогрессии, нулевой член которой -- b, 
@@ -63,9 +63,9 @@ rbgToCmyk (RGB r g b) =
 -- не забудьте случаи n < 0 и n == 0.
 geomProgression :: Double -> Double -> Integer -> Double
 geomProgression b q n
-| n > 0 = q * geomProgression b q (n - 1)
-| n == 0 b 
-| otherwise = (1 / q) * geomProgression b q (n + 1)
+    | n > 0 = q * geomProgression b q (n - 1)
+    | n == 0 = b
+    | otherwise = geomProgression b q (n + 1) / q
 
 -- coprime a b определяет, являются ли a и b взаимно простыми
 -- (определение: Целые числа называются взаимно простыми, 
@@ -82,7 +82,7 @@ geomProgression b q n
 -- обрабатываете отрицательные числа)
 -- https://hackage.haskell.org/package/base-4.9.0.0/docs/Prelude.html
 coprime :: Integer -> Integer -> Bool
-coprime a b = NOD (abs a) (abs b) == 1 where
-    NOD :: Integer -> Integer -> Integer
-    NOD x 0 = x
-    NOD x y = NOD y (x `mod` y)
+coprime a b = nod (abs a) (abs b) == 1 where
+    nod :: Integer -> Integer -> Integer
+    nod x 0 = x
+    nod x y = nod y (x `mod` y)

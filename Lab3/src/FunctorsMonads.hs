@@ -91,9 +91,8 @@ traverseA g (x:xs) = liftA2' (:) (g x) (traverseA g xs)
 -- filterA (\a -> if a < 0 then Nothing else Just (a > 1)) [-1, -2, 1, 2] == Nothing
 filterA :: Applicative' f => (a -> f Bool) -> [a] -> f [a]
 filterA _ [] = pure' []
-filterA p (x:xs) =
-let rest = filterA p xs
-in liftA2' (\b ys -> if b then x : ys else ys) (p x) rest
+filterA p (x:xs) = let rest = filterA p xs
+                   in liftA2' (\b ys -> if b then x : ys else ys) (p x) rest
 -- Композиция монадических функций
 -- composeM Just Just == Just (т.е. для всех x: composeM Just Just x == Just x)
 -- composeM Just (const Nothing) == const Nothing
