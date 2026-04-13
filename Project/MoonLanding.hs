@@ -48,7 +48,7 @@ loop h v fuel
                       putStrLn $ "Введите силу двигателя (0-" ++ show maxThrust ++ "):"
                       t <- readDouble
                       let t' = max 0 (min maxThrust t)
-                      return $ if fuel <= 0 then 0 else min t' fuel 
+                      return $ min t' fuel 
                   else do
                       putStrLn "Топливо закончилось! Свободное падение."
                       return 0
